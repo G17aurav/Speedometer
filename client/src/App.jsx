@@ -7,14 +7,46 @@ const App = () => {
   const [uploadSpeed, setUploadSpeed] = useState(null);
 
   const testDownload = async () => {
-    const imageUrl = "https://speed.hetzner.de/10MB.bin"; // large file
+    const imageUrl = "https://res.cloudinary.com/drmaunxsy/raw/upload/v1746515017/0b3ce99faeda636f66274d1f82ac4146_Abnormal_copy_ivax6w.dicom";
+    const expectedSizeBytes = 9.8441632 * 1024 * 1024; // Expected size in bytes
     const start = Date.now();
-    await fetch(imageUrl, { cache: "no-store" });
+    const response = await fetch(imageUrl, { cache: "no-store" });
+
+    if (!response.ok) {
+        console.error("Failed to fetch image:", response.status);
+        return;
+    }
+
+    const contentLengthHeader = response.headers.get('Content-Length');
+    if (!contentLengthHeader) {
+        console.warn("Content-Length header not found. Cannot verify full download reliably.");
+    } else {
+        const contentLength = parseInt(contentLengthHeader, 10);
+        console.log("Content-Length (bytes):", contentLength);
+        console.log("Expected Size (bytes):", expectedSizeBytes);
+        console.log(contentLength - expectedSizeBytes);
+    }
+
+    const blobData = await response.blob(); 
+    const actualSizeBytes = blobData.size;
+    console.log("Actual Downloaded Size (bytes):", actualSizeBytes);
+
+    if (contentLengthHeader && actualSizeBytes !== parseInt(contentLengthHeader, 10)) {
+        console.warn("Partial download likely! Downloaded size does not match Content-Length.");
+        return; // Or handle the partial download as needed
+    }
+
     const duration = (Date.now() - start) / 1000;
-    const sizeMB = 10;
+    console.log("Start:", start);
+    console.log("Duration:", duration);
+    console.log("End:", Date.now());
+    console.log("Image URL:", imageUrl);
+    console.log("Download time:", duration);
+
+    const sizeMB = actualSizeBytes / (1024 * 1024); // Use actual downloaded size
     const speed = (sizeMB * 8) / duration;
     setDownloadSpeed(speed.toFixed(2));
-  };
+};
 
   const testUpload = async () => {
     const sizeMB = 200;
